@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { Icon, ICONS } from '../common/Icon.jsx'
 
 const NAV_ITEMS = [
-  { key: 'dashboard', label: 'Dashboard', icon: ICONS.grid, active: true },
+  { key: 'dashboard', label: 'Dashboard', icon: ICONS.grid, functional: true },
+  { key: 'import', label: 'Import Data', icon: ICONS.upload, functional: true },
   { key: 'sales', label: 'Sales', icon: ICONS.chart },
   { key: 'inventory', label: 'Inventory', icon: ICONS.boxes },
   { key: 'production', label: 'Production', icon: ICONS.layers },
@@ -11,11 +12,13 @@ const NAV_ITEMS = [
   { key: 'settings', label: 'Settings', icon: ICONS.cog },
 ]
 
-export function Sidebar({ open, setOpen }) {
+export function Sidebar({ open, setOpen, activeView, setActiveView }) {
   const [toast, setToast] = useState(null)
 
   const handleClick = (item) => {
-    if (item.key !== 'dashboard') {
+    if (item.functional) {
+      setActiveView(item.key)
+    } else {
       setToast(item.label)
       setTimeout(() => setToast(null), 1600)
     }
@@ -39,24 +42,27 @@ export function Sidebar({ open, setOpen }) {
           </div>
         </div>
         <nav className="p-3 space-y-1">
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.key}
-              onClick={() => handleClick(item)}
-              className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm transition-colors
-                ${item.active ? 'bg-brand-50 text-brand-700 font-medium' : 'text-muted hover:bg-canvas hover:text-ink'}`}
-            >
-              <span className="flex items-center gap-2.5">
-                <Icon path={item.icon} className="w-4 h-4" />
-                {item.label}
-              </span>
-              {!item.active && (
-                <span className="text-[9px] uppercase tracking-wide text-muted/70 border border-line rounded px-1.5 py-0.5">
-                  V2
+          {NAV_ITEMS.map((item) => {
+            const isActive = item.functional && activeView === item.key
+            return (
+              <button
+                key={item.key}
+                onClick={() => handleClick(item)}
+                className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm transition-colors
+                  ${isActive ? 'bg-brand-50 text-brand-700 font-medium' : 'text-muted hover:bg-canvas hover:text-ink'}`}
+              >
+                <span className="flex items-center gap-2.5">
+                  <Icon path={item.icon} className="w-4 h-4" />
+                  {item.label}
                 </span>
-              )}
-            </button>
-          ))}
+                {!item.functional && (
+                  <span className="text-[9px] uppercase tracking-wide text-muted/70 border border-line rounded px-1.5 py-0.5">
+                    V2
+                  </span>
+                )}
+              </button>
+            )
+          })}
         </nav>
         <div className="absolute bottom-4 left-3 right-3">
           <div className="tag-stamp rounded-lg px-3 py-2 text-[11px] font-mono flex items-center justify-between">

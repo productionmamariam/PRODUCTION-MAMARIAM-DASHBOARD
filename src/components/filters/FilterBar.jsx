@@ -1,5 +1,6 @@
 import { Icon, ICONS } from '../common/Icon.jsx'
-import { PRODUCTS, PLATFORMS, TODAY, toISO } from '../../data/mockData.js'
+import { TODAY, toISO } from '../../data/mockData.js'
+import { dataService } from '../../services/dataService.js'
 import { DATE_LABELS } from '../../utils/dateUtils.js'
 
 function Select({ value, onChange, options }) {
@@ -22,9 +23,12 @@ function Select({ value, onChange, options }) {
 }
 
 export function FilterBar({ filters, setFilters }) {
+  const products = dataService.getProducts()
+  const platforms = dataService.getPlatforms()
+
   const dateOptions = Object.entries(DATE_LABELS).map(([value, label]) => ({ value, label }))
-  const skuOptions = [{ value: 'ALL', label: 'All SKU' }, ...PRODUCTS.map((p) => ({ value: p.sku, label: p.productName }))]
-  const platformOptions = [{ value: 'ALL', label: 'All Platform' }, ...PLATFORMS.map((p) => ({ value: p, label: p }))]
+  const skuOptions = [{ value: 'ALL', label: 'All SKU' }, ...products.map((p) => ({ value: p.sku, label: p.productName }))]
+  const platformOptions = [{ value: 'ALL', label: 'All Platform' }, ...platforms.map((p) => ({ value: p, label: p }))]
 
   const isDirty = filters.datePreset !== 'today' || filters.sku !== 'ALL' || filters.platform !== 'ALL'
 

@@ -14,6 +14,7 @@ export const ICONS = {
   layers: 'M12 3 3 8l9 5 9-5-9-5Z M3 13l9 5 9-5 M3 17l9 5 9-5',
   cog: 'M4 20V10 M11 20V4 M18 20v-7',
   clip: 'M9 4h6v3H9V4Z M6 7h12v13H6V7Z M9 12h6 M9 16h6',
+  upload: 'M12 16V4 M7 9l5-5 5 5 M4 20h16',
 }
 
 export function Icon({ path, className = 'w-4 h-4' }) {

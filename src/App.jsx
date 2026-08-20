@@ -10,38 +10,72 @@ import { SalesTrendChart } from './components/charts/SalesTrendChart.jsx'
 import { OrderTrendChart } from './components/charts/OrderTrendChart.jsx'
 import { Top5SkuChart } from './components/charts/Top5SkuChart.jsx'
 import { PlatformPerformance } from './components/charts/PlatformPerformance.jsx'
+import { LoginScreen } from './components/auth/LoginScreen.jsx'
+import { ImportOrders } from './components/import/ImportOrders.jsx'
 import { ICONS } from './components/common/Icon.jsx'
-import { PRODUCTS, TODAY, toISO } from './data/mockData.js'
+import { TODAY, toISO } from './data/mockData.js'
 import { dataService } from './services/dataService.js'
+import { authService } from './services/authService.js'
 import { proc, previousPeriodItems } from './utils/processing.js'
 import { resolveDateRange } from './utils/dateUtils.js'
 
 export default function App() {
+  const [activeView, setActiveView] = useState('dashboard') // 'dashboard' | 'import'
+  const [authUser, setAuthUser] = useState(null)
+  const [authChecked, setAuthChecked] = useState(false)
+
   const [filters, setFilters] = useState({
     datePreset: 'today',
     sku: 'ALL',
     platform: 'ALL',
     custom: { start: toISO(TODAY), end: toISO(TODAY) },
   })
-  const [loading, setLoading] = useState(true)
+  const [dataReady, setDataReady] = useState(false)
+  const [filterLoading, setFilterLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
+  // Boot: try loading Firebase data once. Falls back to mock data
+  // automatically if Firebase isn't configured or the fetch fails.
   useEffect(() => {
-    setLoading(true)
-    const t = setTimeout(() => setLoading(false), 550)
+    dataService.loadData().finally(() => setDataReady(true))
+  }, [])
+
+  // Track login state for the Import screen (dashboard itself stays public/read-only).
+  useEffect(() => {
+    const unsubscribe = authService.subscribe((user) => {
+      setAuthUser(user)
+      setAuthChecked(true)
+    })
+    return unsubscribe
+  }, [])
+
+  // After a successful import, refresh the in-memory data cache so the
+  // Dashboard tab reflects it without needing a full page reload.
+  const refreshData = () => {
+    setDataReady(false)
+    dataService.loadData().finally(() => setDataReady(true))
+  }
+
+  // Small deliberate delay per filter change so skeleton states are visible
+  // (also covers the brief window while Firestore is still loading).
+  useEffect(() => {
+    setFilterLoading(true)
+    const t = setTimeout(() => setFilterLoading(false), 450)
     return () => clearTimeout(t)
-  }, [filters.datePreset, filters.sku, filters.platform, filters.custom.start, filters.custom.end])
+  }, [filters.datePreset, filters.sku, filters.platform, filters.custom.start, filters.custom.end, dataReady])
+
+  const loading = !dataReady || filterLoading
 
   const dateRange = useMemo(() => resolveDateRange(filters.datePreset, filters.custom), [filters.datePreset, filters.custom])
   const svcFilters = { dateRange, sku: filters.sku, platform: filters.platform }
 
   const currentItems = useMemo(
-    () => dataService.getOrderItems(svcFilters),
-    [dateRange.start, dateRange.end, filters.sku, filters.platform]
+    () => (dataReady ? dataService.getOrderItems(svcFilters) : []),
+    [dataReady, dateRange.start, dateRange.end, filters.sku, filters.platform]
   )
   const prevItems = useMemo(
-    () => previousPeriodItems({ dateRange, sku: filters.sku, platform: filters.platform }),
-    [dateRange.start, dateRange.end, filters.sku, filters.platform]
+    () => (dataReady ? previousPeriodItems({ dateRange, sku: filters.sku, platform: filters.platform }) : []),
+    [dataReady, dateRange.start, dateRange.end, filters.sku, filters.platform]
   )
 
   const totalOrders = proc.uniqueOrderCount(currentItems)
@@ -52,24 +86,39 @@ export default function App() {
   const prevSkuSold = proc.skuCount(prevItems)
   const topPlatform = proc.topPlatform(currentItems)
 
-  const skuTable = useMemo(() => proc.skuByPlatformTable(currentItems), [currentItems])
-  const trendItems = useMemo(() => dataService.getTrendItems(30, filters.sku, filters.platform), [filters.sku, filters.platform])
+  const skuTable = useMemo(() => (dataReady ? proc.skuByPlatformTable(currentItems) : []), [dataReady, currentItems])
+  const trendItems = useMemo(
+    () => (dataReady ? dataService.getTrendItems(30, filters.sku, filters.platform) : []),
+    [dataReady, filters.sku, filters.platform]
+  )
   const dailySeries = useMemo(() => proc.dailySeries(trendItems), [trendItems])
-  const trendStatus = useMemo(() => proc.trendStatus(filters.sku, filters.platform), [filters.sku, filters.platform])
-  const stockOutRows = useMemo(() => proc.stockOut(filters.sku, filters.platform), [filters.sku, filters.platform])
-  const top5 = useMemo(() => proc.top5Sku(currentItems), [currentItems])
-  const platformPerf = useMemo(() => proc.platformPerformance(currentItems), [currentItems])
-  const recent = useMemo(() => proc.recentOrders(currentItems, 8), [currentItems])
+  const trendStatus = useMemo(
+    () => (dataReady ? proc.trendStatus(filters.sku, filters.platform) : { status: 'STABLE', pct: 0 }),
+    [dataReady, filters.sku, filters.platform]
+  )
+  const stockOutRows = useMemo(() => (dataReady ? proc.stockOut(filters.sku, filters.platform) : []), [dataReady, filters.sku, filters.platform])
+  const top5 = useMemo(() => (dataReady ? proc.top5Sku(currentItems) : []), [dataReady, currentItems])
+  const platformPerf = useMemo(() => (dataReady ? proc.platformPerformance(currentItems) : []), [dataReady, currentItems])
+  const recent = useMemo(() => (dataReady ? proc.recentOrders(currentItems, 8) : []), [dataReady, currentItems])
 
-  const trendSelectedLabel = filters.sku === 'ALL' ? 'All SKU' : PRODUCTS.find((p) => p.sku === filters.sku)?.productName
+  const products = dataService.getProducts()
+  const trendSelectedLabel = filters.sku === 'ALL' ? 'All SKU' : products.find((p) => p.sku === filters.sku)?.productName
 
   return (
     <div className="min-h-screen flex">
-      <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
+      <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} activeView={activeView} setActiveView={setActiveView} />
       <div className="flex-1 min-w-0">
-        <Header onMenu={() => setSidebarOpen(true)} />
+        <Header onMenu={() => setSidebarOpen(true)} usingFirebase={dataService.isUsingFirebase()} />
         <main className="px-4 sm:px-6 lg:px-8 py-6 space-y-6 max-w-[1400px]">
-          <FilterBar filters={filters} setFilters={setFilters} />
+          {activeView === 'import' ? (
+            authChecked && authUser ? (
+              <ImportOrders user={authUser} onSignedOut={() => setAuthUser(null)} onImported={refreshData} />
+            ) : (
+              <LoginScreen onSuccess={setAuthUser} />
+            )
+          ) : (
+            <>
+              <FilterBar filters={filters} setFilters={setFilters} />
 
           <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             <KpiCard
@@ -135,6 +184,8 @@ export default function App() {
           <section className="pb-10">
             <RecentOrdersTable rows={recent} loading={loading} />
           </section>
+            </>
+          )}
         </main>
       </div>
     </div>

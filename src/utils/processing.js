@@ -3,7 +3,7 @@
 // Takes arrays from dataService and returns view-ready shapes.
 // =============================================================================
 
-import { PRODUCTS, PLATFORMS, TODAY, toISO } from '../data/mockData.js'
+import { PLATFORMS, TODAY, toISO } from '../data/mockData.js'
 import { dataService } from '../services/dataService.js'
 
 export const proc = {
@@ -21,8 +21,9 @@ export const proc = {
   },
 
   skuByPlatformTable: (items) => {
+    const products = dataService.getProducts()
     const rows = {}
-    PRODUCTS.forEach((p) => {
+    products.forEach((p) => {
       rows[p.sku] = { sku: p.sku, product: p.productName, TikTok: 0, Shopee: 0, WhatsApp: 0, Website: 0, Other: 0, total: 0 }
     })
     items.forEach((i) => {
@@ -51,12 +52,13 @@ export const proc = {
   },
 
   top5Sku: (items) => {
+    const products = dataService.getProducts()
     const bySku = {}
     items.forEach((i) => { bySku[i.sku] = (bySku[i.sku] || 0) + i.quantity })
     const total = proc.unitsSold(items) || 1
     return Object.entries(bySku)
       .map(([sku, units]) => {
-        const p = PRODUCTS.find((pr) => pr.sku === sku)
+        const p = products.find((pr) => pr.sku === sku)
         return { sku, product: p ? p.productName : sku, units, share: Math.round((units / total) * 100) }
       })
       .sort((a, b) => b.units - a.units)
@@ -67,22 +69,26 @@ export const proc = {
     const byPlatform = {}
     PLATFORMS.forEach((p) => { byPlatform[p] = { platform: p, orders: new Set(), units: 0 } })
     items.forEach((i) => {
+      if (!byPlatform[i.platform]) byPlatform[i.platform] = { platform: i.platform, orders: new Set(), units: 0 }
       byPlatform[i.platform].orders.add(i.orderId)
       byPlatform[i.platform].units += i.quantity
     })
     const totalUnits = proc.unitsSold(items) || 1
-    return PLATFORMS.map((p) => ({
-      platform: p,
-      orders: byPlatform[p].orders.size,
-      units: byPlatform[p].units,
-      share: Math.round((byPlatform[p].units / totalUnits) * 100),
-    })).sort((a, b) => b.units - a.units)
+    return Object.values(byPlatform)
+      .map((p) => ({
+        platform: p.platform,
+        orders: p.orders.size,
+        units: p.units,
+        share: Math.round((p.units / totalUnits) * 100),
+      }))
+      .sort((a, b) => b.units - a.units)
   },
 
   stockOut: (sku, platform) => {
+    const products = dataService.getProducts()
     const windows = { today: 1, week: 7, month: 30 }
     const result = {}
-    PRODUCTS.forEach((p) => { result[p.sku] = { sku: p.sku, product: p.productName, today: 0, week: 0, month: 0 } })
+    products.forEach((p) => { result[p.sku] = { sku: p.sku, product: p.productName, today: 0, week: 0, month: 0 } })
     const allItems = dataService.getAllOrderItems()
     Object.entries(windows).forEach(([key, days]) => {
       const start = new Date(TODAY); start.setDate(start.getDate() - (days - 1))
