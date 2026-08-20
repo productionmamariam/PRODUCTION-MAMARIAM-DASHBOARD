@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react'
 import { Icon, ICONS } from '../common/Icon.jsx'
 import { authService } from '../../services/authService.js'
-import { parseCsvFile, validateRows, importRows, downloadTemplateCsv } from '../../services/importService.js'
+import { parseCsvFile, validateRows, importRows, downloadTemplateCsv, resolveSkuAliases } from '../../services/importService.js'
 import { parseLuxanaFile, mapLuxanaRows } from '../../services/luxanaImportService.js'
+import { dataService } from '../../services/dataService.js'
 
 const STAGE = { PICK: 'pick', PREVIEW: 'preview', IMPORTING: 'importing', DONE: 'done' }
 const MODE = { LUXANA: 'luxana', TEMPLATE: 'template' }
@@ -27,13 +28,15 @@ export function ImportOrders({ user, onSignedOut, onImported }) {
     if (mode === MODE.LUXANA) {
       const rawRows = await parseLuxanaFile(file)
       const { rows, warnings: luxanaWarnings } = mapLuxanaRows(rawRows)
-      const { valid, errors: rowErrors } = validateRows(rows)
+      const resolvedRows = resolveSkuAliases(rows, dataService.getProducts())
+      const { valid, errors: rowErrors } = validateRows(resolvedRows)
       setValidRows(valid)
       setErrors(rowErrors)
       setWarnings(luxanaWarnings)
     } else {
       const rows = await parseCsvFile(file)
-      const { valid, errors: rowErrors } = validateRows(rows)
+      const resolvedRows = resolveSkuAliases(rows, dataService.getProducts())
+      const { valid, errors: rowErrors } = validateRows(resolvedRows)
       setValidRows(valid)
       setErrors(rowErrors)
     }

@@ -26,6 +26,34 @@ import { db } from './firebase.js'
 const REQUIRED_COLUMNS = ['orderId', 'date', 'platform', 'status', 'sku', 'productName', 'quantity']
 const BATCH_LIMIT = 400 // stay comfortably under Firestore's 500-write cap (2 writes per row)
 
+export function buildSkuAliasMap(products) {
+  const aliasToCanonical = {}
+  const canonicalToName = {}
+  products.forEach((p) => {
+    aliasToCanonical[p.sku] = p.sku
+    canonicalToName[p.sku] = p.productName
+    ;(p.platformSkus || []).forEach((alias) => {
+      const trimmed = String(alias).trim()
+      if (trimmed) aliasToCanonical[trimmed] = p.sku
+    })
+  })
+  return { aliasToCanonical, canonicalToName }
+}
+
+// Rewrites each row's `sku`/`productName` to the canonical product identity
+// when that row's sku is a known platform-specific alias (see the
+// `platformSkus` array on a product document, e.g. product "1MM" listing
+// ["TT-10379565", "SH_1MM", "1mm"] as its platform SKU codes). Rows whose
+// sku isn't a known alias pass through unchanged.
+export function resolveSkuAliases(rows, products) {
+  const { aliasToCanonical, canonicalToName } = buildSkuAliasMap(products)
+  return rows.map((r) => {
+    const canonicalSku = aliasToCanonical[r.sku] || r.sku
+    const productName = canonicalToName[canonicalSku] || r.productName
+    return { ...r, sku: canonicalSku, productName }
+  })
+}
+
 export function parseCsvFile(file) {
   return new Promise((resolve, reject) => {
     Papa.parse(file, {

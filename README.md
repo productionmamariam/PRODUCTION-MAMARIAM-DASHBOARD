@@ -136,6 +136,21 @@ The dashboard has a built-in **Import Orders** screen (Sidebar → "Import Data"
 
 **Mode 2 — Manual Template (.csv)** — for one-off manual entry or other systems. Click "Download template" inside the Import screen for the exact column headers needed: `orderId, date, platform, status, sku, productName, quantity`. One row = one product line in an order.
 
+### One product, different SKU codes per platform (SKU aliases)
+
+If the same physical product is sold under different SKU codes on different platforms (e.g. "Jus Mamariam" is `TT-10379565` on TikTok, `SH_1MM` on Shopee, and `1mm` for WhatsApp/manual orders), don't create separate product documents for each — Document IDs must be unique, so reusing "1MM" three times would just overwrite the same document.
+
+Instead, keep **one** product document for the physical product, and list its other platform codes in a `platformSkus` array field:
+
+1. In Firestore Database → `products` collection → open (or create) the document for the canonical product, Document ID `1MM`, with fields `sku: "1MM"`, `productName: "Jus Mamariam"`, `category: "Juice"`.
+2. Click **"Add field"** → Field name: `platformSkus` → Type: **array** → add each platform code as one array item, e.g.:
+   ```
+   platformSkus: ["TT-10379565", "SH_1MM", "1mm"]
+   ```
+3. Save.
+
+From then on, whenever you import orders (Luxana or manual CSV) containing any of those codes, the importer automatically resolves them to the canonical `1MM` / "Jus Mamariam" before writing — so KPIs, Top 5 SKU, and Stock Out all reflect the true combined total for that product, regardless of which platform code appeared in the raw order. Codes not listed in any `platformSkus` array are imported as-is under their own SKU.
+
 ### Setting up staff accounts (for Import access)
 
 Viewing the dashboard itself needs no login. Importing data does, so random visitors can't write to your database.
