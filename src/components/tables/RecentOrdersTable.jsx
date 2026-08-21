@@ -1,5 +1,6 @@
 import { EmptyState } from '../common/EmptyState.jsx'
 import { fmtDate } from '../../utils/dateUtils.js'
+import { platformColor } from '../../utils/platformColors.js'
 
 export function RecentOrdersTable({ rows, loading }) {
   return (
@@ -39,12 +40,12 @@ export function RecentOrdersTable({ rows, loading }) {
                   <td className="px-4 py-2.5 whitespace-nowrap text-muted">{fmtDate(r.date)}</td>
                   <td className="px-4 py-2.5 font-mono text-xs whitespace-nowrap">{r.orderId}</td>
                   <td className="px-4 py-2.5 whitespace-nowrap">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-canvas border border-line">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${platformColor(r.platform).chip}`}>
                       {r.platform}
                     </span>
                   </td>
                   <td className="px-4 py-2.5 font-mono text-xs text-muted whitespace-nowrap">{r.sku}</td>
-                  <td className="px-4 py-2.5 font-medium text-ink whitespace-nowrap">{r.productName}</td>
+                  <td className="px-4 py-2.5 font-medium text-ink max-w-[220px] truncate" title={r.productName}>{r.productName}</td>
                   <td className="px-4 py-2.5 text-right tabular-nums">{r.quantity}</td>
                 </tr>
               ))}

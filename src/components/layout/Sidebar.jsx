@@ -3,6 +3,7 @@ import { Icon, ICONS } from '../common/Icon.jsx'
 
 const NAV_ITEMS = [
   { key: 'dashboard', label: 'Dashboard', icon: ICONS.grid, functional: true },
+  { key: 'addOrder', label: 'Add Order', icon: ICONS.bag, functional: true },
   { key: 'import', label: 'Import Data', icon: ICONS.upload, functional: true },
   { key: 'sales', label: 'Sales', icon: ICONS.chart },
   { key: 'inventory', label: 'Inventory', icon: ICONS.boxes },

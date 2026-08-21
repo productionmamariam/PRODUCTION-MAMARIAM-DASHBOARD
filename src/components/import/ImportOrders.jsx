@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { Icon, ICONS } from '../common/Icon.jsx'
 import { authService } from '../../services/authService.js'
-import { parseCsvFile, validateRows, importRows, downloadTemplateCsv, resolveSkuAliases } from '../../services/importService.js'
+import { parseCsvFile, validateRows, importRows, downloadTemplateCsv, resolveSkuAliases, migrateSkuAliases } from '../../services/importService.js'
 import { parseLuxanaFile, mapLuxanaRows } from '../../services/luxanaImportService.js'
 import { dataService } from '../../services/dataService.js'
 
@@ -19,6 +19,22 @@ export function ImportOrders({ user, onSignedOut, onImported }) {
   const [progress, setProgress] = useState({ done: 0, total: 0 })
   const [result, setResult] = useState(null)
   const [dragOver, setDragOver] = useState(false)
+  const [migrating, setMigrating] = useState(false)
+  const [migrateResult, setMigrateResult] = useState(null)
+
+  const handleMergeAliases = async () => {
+    setMigrating(true)
+    setMigrateResult(null)
+    try {
+      const summary = await migrateSkuAliases(dataService.getProducts(), (done, total) => setProgress({ done, total }))
+      setMigrateResult(summary)
+      if (onImported) onImported()
+    } catch (err) {
+      setMigrateResult({ error: err.message || String(err) })
+    } finally {
+      setMigrating(false)
+    }
+  }
 
   const handleFile = async (file) => {
     if (!file) return
@@ -92,6 +108,28 @@ export function ImportOrders({ user, onSignedOut, onImported }) {
           className="text-xs font-medium text-muted hover:text-ink border border-line rounded-lg px-3 py-1.5"
         >
           Sign out
+        </button>
+      </div>
+
+      <div className="bg-turmeric/10 border border-turmeric/20 rounded-xl p-4 flex items-center justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium text-ink">Already set up a product's platform SKU aliases?</p>
+          <p className="text-xs text-muted mt-0.5">
+            Aliases only apply to new imports. Run this once to merge existing order data onto the canonical SKU too.
+          </p>
+          {migrateResult && !migrateResult.error && (
+            <p className="text-xs text-brand-700 font-medium mt-1">
+              Done — {migrateResult.migrated} of {migrateResult.scanned} line item(s) merged.
+            </p>
+          )}
+          {migrateResult?.error && <p className="text-xs text-clay font-medium mt-1">Error: {migrateResult.error}</p>}
+        </div>
+        <button
+          onClick={handleMergeAliases}
+          disabled={migrating}
+          className="shrink-0 text-xs font-medium text-turmeric border border-turmeric/30 bg-white hover:bg-turmeric/10 rounded-lg px-3 py-2 whitespace-nowrap disabled:opacity-50"
+        >
+          {migrating ? `Merging… ${progress.done}/${progress.total}` : 'Merge SKU Aliases Now'}
         </button>
       </div>
 

@@ -12,6 +12,7 @@ import { Top5SkuChart } from './components/charts/Top5SkuChart.jsx'
 import { PlatformPerformance } from './components/charts/PlatformPerformance.jsx'
 import { LoginScreen } from './components/auth/LoginScreen.jsx'
 import { ImportOrders } from './components/import/ImportOrders.jsx'
+import { AddOrderForm } from './components/import/AddOrderForm.jsx'
 import { ICONS } from './components/common/Icon.jsx'
 import { TODAY, toISO } from './data/mockData.js'
 import { dataService } from './services/dataService.js'
@@ -20,7 +21,7 @@ import { proc, previousPeriodItems } from './utils/processing.js'
 import { resolveDateRange } from './utils/dateUtils.js'
 
 export default function App() {
-  const [activeView, setActiveView] = useState('dashboard') // 'dashboard' | 'import'
+  const [activeView, setActiveView] = useState('dashboard') // 'dashboard' | 'import' | 'addOrder'
   const [authUser, setAuthUser] = useState(null)
   const [authChecked, setAuthChecked] = useState(false)
 
@@ -110,9 +111,13 @@ export default function App() {
       <div className="flex-1 min-w-0">
         <Header onMenu={() => setSidebarOpen(true)} usingFirebase={dataService.isUsingFirebase()} />
         <main className="px-4 sm:px-6 lg:px-8 py-6 space-y-6 max-w-[1400px]">
-          {activeView === 'import' ? (
+          {activeView === 'import' || activeView === 'addOrder' ? (
             authChecked && authUser ? (
-              <ImportOrders user={authUser} onSignedOut={() => setAuthUser(null)} onImported={refreshData} />
+              activeView === 'addOrder' ? (
+                <AddOrderForm user={authUser} onSignedOut={() => setAuthUser(null)} onImported={refreshData} />
+              ) : (
+                <ImportOrders user={authUser} onSignedOut={() => setAuthUser(null)} onImported={refreshData} />
+              )
             ) : (
               <LoginScreen onSuccess={setAuthUser} />
             )
@@ -128,6 +133,7 @@ export default function App() {
               tooltip="Count of unique Order IDs in the selected period."
               value={totalOrders.toLocaleString()}
               sub={<Delta pct={proc.pctChange(totalOrders, prevOrders)} />}
+              accent="bg-indigo-50 text-indigo-600"
             />
             <KpiCard
               icon={ICONS.package}
@@ -136,6 +142,7 @@ export default function App() {
               tooltip="Total quantity of products sold during the selected period."
               value={unitsSold.toLocaleString()}
               sub={<Delta pct={proc.pctChange(unitsSold, prevUnits)} />}
+              accent="bg-brand-50 text-brand-600"
             />
             <KpiCard
               icon={ICONS.boxes}
@@ -148,6 +155,7 @@ export default function App() {
                   {skuSold - prevSkuSold >= 0 ? '+' : ''}{skuSold - prevSkuSold} SKU vs previous period
                 </span>
               }
+              accent="bg-turmeric/10 text-turmeric"
             />
             <KpiCard
               icon={ICONS.store}
@@ -156,6 +164,7 @@ export default function App() {
               tooltip="Platform with the highest units sold in the selected period."
               value={topPlatform.platform || '—'}
               sub={<span className="text-xs text-muted font-medium">{topPlatform.share}% of units sold</span>}
+              accent="bg-rose-50 text-rose-600"
             />
           </section>
 

@@ -15,7 +15,7 @@ export function Top5SkuChart({ data, loading }) {
               <span className="w-5 text-xs font-semibold text-muted tabular-nums">{idx + 1}</span>
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-ink">{row.product}</span>
+                  <span className="text-sm font-medium text-ink truncate max-w-[70%]" title={row.product}>{row.product}</span>
                   <span className="text-xs text-muted tabular-nums">{row.units.toLocaleString()} units · {row.share}%</span>
                 </div>
                 <div className="h-2 rounded-full bg-canvas overflow-hidden">

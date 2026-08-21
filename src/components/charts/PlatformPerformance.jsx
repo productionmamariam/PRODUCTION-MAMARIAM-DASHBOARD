@@ -1,6 +1,7 @@
 import { ChartCard } from './ChartCard.jsx'
 import { EmptyState } from '../common/EmptyState.jsx'
 import { Icon, ICONS } from '../common/Icon.jsx'
+import { platformColor } from '../../utils/platformColors.js'
 
 export function PlatformPerformance({ data, loading }) {
   return (
@@ -12,7 +13,7 @@ export function PlatformPerformance({ data, loading }) {
           {data.map((row) => (
             <div key={row.platform} className="flex items-center justify-between border border-line rounded-lg px-3 py-2.5">
               <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-md bg-brand-50 text-brand-600 flex items-center justify-center">
+                <div className={`w-7 h-7 rounded-md flex items-center justify-center ${platformColor(row.platform).iconBg}`}>
                   <Icon path={ICONS.store} className="w-3.5 h-3.5" />
                 </div>
                 <span className="text-sm font-medium text-ink">{row.platform}</span>

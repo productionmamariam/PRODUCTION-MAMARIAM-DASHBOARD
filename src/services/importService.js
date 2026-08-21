@@ -20,7 +20,7 @@
 // =============================================================================
 
 import Papa from 'papaparse'
-import { doc, writeBatch } from 'firebase/firestore'
+import { doc, writeBatch, getDocs, collection } from 'firebase/firestore'
 import { db } from './firebase.js'
 
 const REQUIRED_COLUMNS = ['orderId', 'date', 'platform', 'status', 'sku', 'productName', 'quantity']
@@ -173,4 +173,56 @@ export function downloadTemplateCsv() {
   a.click()
   document.body.removeChild(a)
   URL.revokeObjectURL(url)
+}
+
+// =============================================================================
+// MIGRATE EXISTING SKU ALIASES — a one-time fix-up for data that was already
+// imported BEFORE a product's `platformSkus` alias array was set up.
+//
+// Alias resolution only happens at import time (see resolveSkuAliases
+// above), so order_items written earlier keep whatever raw platform SKU
+// code they arrived with. This scans every order_items document, and for
+// any whose `sku` is now a known alias of a canonical product, rewrites it
+// under the canonical SKU's document ID and deletes the old one.
+//
+// Safe to run more than once — documents already on their canonical SKU are
+// left untouched.
+// =============================================================================
+export async function migrateSkuAliases(products, onProgress) {
+  if (!db) throw new Error('Firebase is not configured yet.')
+  const { aliasToCanonical, canonicalToName } = buildSkuAliasMap(products)
+
+  const snap = await getDocs(collection(db, 'order_items'))
+  const toMigrate = []
+  snap.forEach((docSnap) => {
+    const data = docSnap.data()
+    const canonicalSku = aliasToCanonical[data.sku] || data.sku
+    if (canonicalSku !== data.sku) {
+      toMigrate.push({
+        oldId: docSnap.id,
+        newId: `${data.orderId}__${canonicalSku}`,
+        data: {
+          orderId: data.orderId,
+          sku: canonicalSku,
+          productName: canonicalToName[canonicalSku] || data.productName,
+          quantity: data.quantity,
+        },
+      })
+    }
+  })
+
+  let done = 0
+  for (let i = 0; i < toMigrate.length; i += BATCH_LIMIT) {
+    const chunk = toMigrate.slice(i, i + BATCH_LIMIT)
+    const batch = writeBatch(db)
+    chunk.forEach((m) => {
+      batch.set(doc(db, 'order_items', m.newId), m.data, { merge: true })
+      batch.delete(doc(db, 'order_items', m.oldId))
+    })
+    await batch.commit()
+    done += chunk.length
+    if (onProgress) onProgress(done, toMigrate.length)
+  }
+
+  return { migrated: toMigrate.length, scanned: snap.size }
 }

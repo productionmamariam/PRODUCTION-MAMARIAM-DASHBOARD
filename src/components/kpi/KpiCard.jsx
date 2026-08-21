@@ -17,12 +17,13 @@ export function Delta({ pct, positiveIsGood = true, suffix = 'vs previous period
   )
 }
 
-export function KpiCard({ icon, title, tooltip, value, sub, loading }) {
+export function KpiCard({ icon, title, tooltip, value, sub, loading, accent = 'bg-brand-50 text-brand-600' }) {
   const [showTip, setShowTip] = useState(false)
   return (
-    <div className="bg-card rounded-xl border border-line shadow-card p-4 sm:p-5 relative">
+    <div className="bg-card rounded-xl border border-line shadow-card p-4 sm:p-5 relative overflow-hidden">
+      <div className={`absolute top-0 left-0 right-0 h-1 ${accent.split(' ')[0]}`} />
       <div className="flex items-start justify-between mb-3">
-        <div className="w-8 h-8 rounded-lg bg-brand-50 flex items-center justify-center text-brand-600">
+        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${accent}`}>
           <Icon path={icon} className="w-4 h-4" />
         </div>
         {tooltip && (

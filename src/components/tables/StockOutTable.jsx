@@ -33,7 +33,7 @@ export function StockOutTable({ rows, loading }) {
               : rows.map((r) => (
                 <tr key={r.sku} className="border-b border-line/70 hover:bg-canvas/60">
                   <td className="px-4 py-2.5 font-mono text-xs text-muted">{r.sku}</td>
-                  <td className="px-4 py-2.5 font-medium text-ink whitespace-nowrap">{r.product}</td>
+                  <td className="px-4 py-2.5 font-medium text-ink max-w-[240px] truncate" title={r.product}>{r.product}</td>
                   <td className="px-4 py-2.5 text-right tabular-nums">{r.today.toLocaleString()}</td>
                   <td className="px-4 py-2.5 text-right tabular-nums">{r.week.toLocaleString()}</td>
                   <td className="px-4 py-2.5 text-right tabular-nums">{r.month.toLocaleString()}</td>

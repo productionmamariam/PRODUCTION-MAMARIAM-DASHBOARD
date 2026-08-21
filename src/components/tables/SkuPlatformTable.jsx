@@ -90,7 +90,7 @@ export function SkuPlatformTable({ rows, loading }) {
               : filtered.map((row) => (
                 <tr key={row.sku} className="border-b border-line/70 hover:bg-canvas/60 transition-colors">
                   <td className="px-4 py-2.5 font-mono text-xs text-muted whitespace-nowrap">{row.sku}</td>
-                  <td className="px-4 py-2.5 font-medium text-ink whitespace-nowrap">{row.product}</td>
+                  <td className="px-4 py-2.5 font-medium text-ink max-w-[240px] truncate" title={row.product}>{row.product}</td>
                   <td className="px-4 py-2.5 text-right tabular-nums">{row.TikTok.toLocaleString()}</td>
                   <td className="px-4 py-2.5 text-right tabular-nums">{row.Shopee.toLocaleString()}</td>
                   <td className="px-4 py-2.5 text-right tabular-nums">{row.WhatsApp.toLocaleString()}</td>
