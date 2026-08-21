@@ -1,7 +1,7 @@
 import { ChartCard } from './ChartCard.jsx'
 import { EmptyState } from '../common/EmptyState.jsx'
 
-const RANK_COLORS = ['#1F6B4A', '#3D8163', '#7AB68C', '#A9CFB4', '#D3E5D8']
+const RANK_COLORS = ['#7A1F2B', '#9B3844', '#C97B84', '#DDA8AE', '#EFD9DC']
 
 export function Top5SkuChart({ data, loading }) {
   return (
@@ -19,7 +19,7 @@ export function Top5SkuChart({ data, loading }) {
                   <span className="text-xs text-muted tabular-nums">{row.units.toLocaleString()} units · {row.share}%</span>
                 </div>
                 <div className="h-2 rounded-full bg-canvas overflow-hidden">
-                  <div className="h-full rounded-full" style={{ width: `${row.share}%`, background: RANK_COLORS[idx] || '#1F6B4A' }} />
+                  <div className="h-full rounded-full" style={{ width: `${row.share}%`, background: RANK_COLORS[idx] || '#7A1F2B' }} />
                 </div>
               </div>
             </div>

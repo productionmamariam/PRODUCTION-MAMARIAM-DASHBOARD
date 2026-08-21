@@ -26,6 +26,10 @@ export function ImportOrders({ user, onSignedOut, onImported }) {
     setMigrating(true)
     setMigrateResult(null)
     try {
+      // Refresh products from Firestore first — otherwise this would run
+      // against a stale in-memory product list that predates any
+      // platformSkus you just added in the Firebase Console.
+      await dataService.loadData()
       const summary = await migrateSkuAliases(dataService.getProducts(), (done, total) => setProgress({ done, total }))
       setMigrateResult(summary)
       if (onImported) onImported()

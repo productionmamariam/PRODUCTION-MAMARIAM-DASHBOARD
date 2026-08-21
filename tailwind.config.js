@@ -4,21 +4,21 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: '#1E2A22',
-        canvas: '#F6F7F4',
+        ink: '#241716',
+        canvas: '#FAF7F2',
         card: '#FFFFFF',
-        line: '#E4E7E0',
-        muted: '#727C73',
+        line: '#E8E0D8',
+        muted: '#7A6F68',
         brand: {
-          50: '#EAF3EC',
-          100: '#CDE3D3',
-          300: '#7AB68C',
-          500: '#1F6B4A',
-          600: '#195A3E',
-          700: '#134531',
+          50: '#F8ECEC',
+          100: '#EACECE',
+          300: '#B5616A',
+          500: '#7A1F2B',
+          600: '#651A24',
+          700: '#4F141C',
         },
-        clay: '#C2483B',
-        turmeric: '#C97B2E',
+        clay: '#9B2C2C',
+        turmeric: '#D4A017',
         slate2: '#5B6B78',
       },
       fontFamily: {
@@ -27,7 +27,7 @@ export default {
         mono: ['Roboto Mono', 'monospace'],
       },
       boxShadow: {
-        card: '0 1px 2px rgba(30,42,34,0.04), 0 1px 8px rgba(30,42,34,0.05)',
+        card: '0 1px 2px rgba(36,23,22,0.05), 0 1px 8px rgba(36,23,22,0.06)',
       },
     },
   },
